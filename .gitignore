@@ -196,3 +196,6 @@ MultimodalLLM/cider/pycocoevalcap/wmd/data/*
 MultimodalLLM/cider/pycocoevalcap/tokenizer/*.jar
 MultimodalLLM/cider/pycocoevalcap/spice/*.jar
 MultimodalLLM/cider/pycocoevalcap/meteor/*.jar
+
+log/
+logs/
