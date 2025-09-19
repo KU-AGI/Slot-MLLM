@@ -199,3 +199,4 @@ MultimodalLLM/cider/pycocoevalcap/meteor/*.jar
 
 log/
 logs/
+pretrained/
