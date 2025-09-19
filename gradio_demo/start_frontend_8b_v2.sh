@@ -1,0 +1,1 @@
+python3 slot_mllm_gradio_v2.py --server_port 6060

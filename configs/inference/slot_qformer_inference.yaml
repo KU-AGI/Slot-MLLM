@@ -1,0 +1,51 @@
+cfg_path: ???
+transform_cfg_path: configs/transform/slot_transform.yaml
+result_file_path: ./logs/slot_diffusion
+checkpoint_path:
+  model_path:
+
+test: False
+resume: False
+load_weight: True
+weight_path: pretrained/slot_qformer.pth
+eval: False
+
+dist:
+  n_gpus: 1
+  n_nodes: 1
+
+stage1:
+  dino_model_name: 'dinov2_vitl14' # ['dinov2_vits14', 'dinov2_vitb14', 'dinov2_vitl14', 'dinov2_vitg14']
+  unfreeze_unet: True
+  unfreeze_resnet: False
+  image_size: 256 # [256, 512]
+  loss_weight:
+    loss_itc: 0.5   # Default 0.5
+    loss_lm: 0.5    # Default 0.5
+    loss_diffusion: 1   # Default 1
+    loss_mse: 0.5  # Default 0.5
+  use_causal: True # Default True
+  use_slot: True # Default True
+  slot_config:
+    T: 1
+    num_iterations: 3
+    use_half_slot: False # Default False
+
+stage2:
+  loss_weight:
+    loss_codebook: 1
+    loss_recon: 1
+    loss_diffusion: 0.1
+    loss_mse: 0.1
+  unfreeze_unet: False
+  unfreeze_linear: False
+  blocks_layers: 4  # Default 4
+  blocks_image_layers: 4 # Default 4
+  use_blocks_image: True
+  unclip: False
+  vq:
+    vq_type: 'residual_vq'
+    num_quantizers: 4 # Default 4
+    codebook_embed_dim: 32  # Default 32
+    n_embed: 8192   # Default 8192
+  bypass_codebook: False
