@@ -11,12 +11,10 @@ conda env create -f slot_mllm.yaml
 conda activate slot_mllm
 ```
 
-## Download Model Weights
+## Huggingface Model Weights
 
-Please download the weights for each model component from the following links:
-
-* **Slot Q-Former Weights:** [Download Slot Q-Former weights](https://drive.google.com/file/d/1ApDtlQwJnFizrIvYlElJg4y2ivbuuETW/view?usp=sharing)
-* **Slot-MLLM Weights:** [Download Slot-MLLM weights](https://drive.google.com/drive/folders/1WPfkzejvJM_1Rpqs-31elZE7_sUdrsFz?usp=drive_link)
+* **Slot Q-Former Weights:** [KU-AGILab/Slot_Q-Former](https://huggingface.co/KU-AGILab/Slot_Q-Former)
+* **Slot-MLLM Weights:** [KU-AGILab/Slot-MLLM-7B-instruct](https://huggingface.co/KU-AGILab/Slot-MLLM-7B-instruct) | [KU-AGILab/Slot-MLLM-14B-instruct](https://huggingface.co/KU-AGILab/Slot-MLLM-14B-instruct)
 
 ## Inference
 
