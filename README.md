@@ -2,6 +2,8 @@
 
 This repository contains the official implementation of the paper **Slot-MLLM: Object-Centric Visual Tokenization for Multimodal LLM**.
 
+📄 **Paper:** [arXiv:2505.17726](https://arxiv.org/abs/2505.17726)
+
 ## Environment Setup
 
 We provide a Conda configuration file to easily set up the environment:
