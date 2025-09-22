@@ -34,22 +34,22 @@ Run the following command to perform each task:
 
 ```bash
 # Image Captioning
-python inference_mllm.py --image_path=sample_data/understanding_input_img.jpg --is_14b True/False
+python inference_mllm.py --image_path=sample_data/understanding_input_img.jpg [--is_14b]
 ```
 
 ```bash
 # Visual Question Answering
-python inference_mllm.py --image_path=sample_data/understanding_input_img.jpg --prompt="What color is the small animal?" --is_14b True/False
+python inference_mllm.py --image_path=sample_data/understanding_input_img.jpg --prompt="What color is the small animal?" [--is_14b]
 ```
 
 ```bash
 # Text-to-Image Generation
-python inference_mllm.py --prompt="A red bicycle against a blue wall." --generation --is_14b True/False
+python inference_mllm.py --prompt="A red bicycle against a blue wall." --generation [--is_14b]
 ```
 
 ```bash
 # Image Editing
-python inference_mllm.py --image_path=sample_data/edit_input_img.png --prompt="leave only one cherry on top." --generation --is_14b True/False
+python inference_mllm.py --image_path=sample_data/edit_input_img.png --prompt="leave only one cherry on top." --generation [--is_14b]
 ```
 
 ## Guidelines for Responsible Use
