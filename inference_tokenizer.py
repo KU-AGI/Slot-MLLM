@@ -25,7 +25,7 @@ if __name__ == "__main__":
     os.makedirs(cfg.result_file_path, exist_ok=True)
 
     model = SlotQFormerModel.from_pretrained(
-        "KU-AGILab/Slot_Q-Former",
+        "KU-AGI/Slot_Q-Former",
     ).wrapper.to(device)
     model.freeze()
     model.eval()

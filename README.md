@@ -15,8 +15,8 @@ conda activate slot_mllm
 
 ## Huggingface Model Weights
 
-* **Slot Q-Former Weights:** [KU-AGILab/Slot_Q-Former](https://huggingface.co/KU-AGILab/Slot_Q-Former)
-* **Slot-MLLM Weights:** [KU-AGILab/Slot-MLLM-7B-instruct](https://huggingface.co/KU-AGILab/Slot-MLLM-7B-instruct) | [KU-AGILab/Slot-MLLM-14B-instruct](https://huggingface.co/KU-AGILab/Slot-MLLM-14B-instruct)
+* **Slot Q-Former Weights:** [KU-AGI/Slot_Q-Former](https://huggingface.co/KU-AGI/Slot_Q-Former)
+* **Slot-MLLM Weights:** [KU-AGI/Slot-MLLM-7B-instruct](https://huggingface.co/KU-AGI/Slot-MLLM-7B-instruct) | [KU-AGI/Slot-MLLM-14B-instruct](https://huggingface.co/KU-AGI/Slot-MLLM-14B-instruct)
 
 ## Inference
 

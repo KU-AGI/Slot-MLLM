@@ -195,12 +195,12 @@ if __name__ == "__main__":
     visual_tokenizer_cfg, _ = build_config(path=visual_tokenizer_cfg_path)
 
     visual_tokenizer = SlotQFormerModel.from_pretrained(
-        "KU-AGILab/Slot_Q-Former",
+        "KU-AGI/Slot_Q-Former",
     ).wrapper.to(device)
     visual_tokenizer.freeze()
     visual_tokenizer.eval()
 
-    model_name = "KU-AGILab/Slot-MLLM-7B-instruct" if not args.is_14b else "KU-AGILab/Slot-MLLM-14B-instruct"
+    model_name = "KU-AGI/Slot-MLLM-7B-instruct" if not args.is_14b else "KU-AGI/Slot-MLLM-14B-instruct"
 
     text_tokenizer = AutoTokenizer.from_pretrained(
         model_name,
