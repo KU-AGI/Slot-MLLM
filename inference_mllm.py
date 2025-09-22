@@ -12,12 +12,13 @@ from utils.config import build_config
 from modeling_slot_qformer import SlotQFormerModel
 
 class SlotMLLMInferenceWrapper(LightningModule):
-    def __init__(self, model, visual_tokenizer, tokenizer, transform, special_tokens):
+    def __init__(self, model, visual_tokenizer, tokenizer, transform, special_tokens, is_14b=False):
         super().__init__()
         self.model = model
         self.visual_tokenizer = visual_tokenizer
         self.text_tokenizer = tokenizer
         self.transform = transform
+        self.is_14b = is_14b
 
         self.boi_token = torch.tensor([special_tokens["boi_token"]], dtype=torch.int64)
         self.eoi_token = torch.tensor([special_tokens["eoi_token"]], dtype=torch.int64)
@@ -40,8 +41,10 @@ class SlotMLLMInferenceWrapper(LightningModule):
         slot_tokens = slot_tokens + self.text_vocab_size
         slot_tokens = rearrange(slot_tokens, "b n d -> b (n d)", d=visual_tokenizer.num_quantizers)
         
-
-        prompt = f"USER: <img>{prompt} Please provide an accurate answer consisting of only one word or phrase.\nASSISTANT:"
+        if self.is_14b:
+            prompt = self.text_tokenizer.apply_chat_template([{"role" : "user", "content" : f"<img>{prompt} Please provide an accurate answer consisting of only one word or phrase."}], tokenize=False, add_generation_prompt=True)
+        else:
+            prompt = f"USER: <img>{prompt} Please provide an accurate answer consisting of only one word or phrase.\nASSISTANT:"
         input_ids = self.prepare_input_ids(prompt, slot_tokens)
 
         with torch.no_grad():
@@ -64,8 +67,10 @@ class SlotMLLMInferenceWrapper(LightningModule):
         slot_tokens = slot_tokens + self.text_vocab_size
         slot_tokens = rearrange(slot_tokens, "b n d -> b (n d)", d=visual_tokenizer.num_quantizers)
         
-
-        prompt = f"USER: <img> Please provide an accurate and concise description of the given image."
+        if self.is_14b:
+            prompt = self.text_tokenizer.apply_chat_template([{"role" : "user", "content" : "<img> Please provide an accurate and concise description of the given image."}], tokenize=False, add_generation_prompt=True)
+        else:
+            prompt = f"USER: <img> Please provide an accurate and concise description of the given image.\nASSISTANT:"
         input_ids = self.prepare_input_ids(prompt, slot_tokens)
 
         with torch.no_grad():
@@ -80,7 +85,10 @@ class SlotMLLMInferenceWrapper(LightningModule):
 
 
     def text_to_image_generation(self, prompt):
-        prompt = f"USER: {prompt} Please generate an image.\nASSISTANT:"
+        if self.is_14b:
+            prompt = self.text_tokenizer.apply_chat_template([{"role" : "user", "content" : f"{prompt} Please generate an image."}], tokenize=False, add_generation_prompt=True)
+        else:
+            prompt = f"USER: {prompt} Please generate an image.\nASSISTANT:"
         input_ids = self.text_tokenizer(prompt, add_special_tokens=True, return_tensors='pt').input_ids.to(self.device)
         
         with torch.no_grad():
@@ -101,8 +109,10 @@ class SlotMLLMInferenceWrapper(LightningModule):
         slot_tokens = slot_tokens + self.text_vocab_size
         slot_tokens = rearrange(slot_tokens, "b n d -> b (n d)", d=visual_tokenizer.num_quantizers)
 
-        
-        prompt = f"USER: <img>{prompt}\nASSISTANT:"
+        if self.is_14b:
+            prompt = self.text_tokenizer.apply_chat_template([{"role" : "user", "content" : f"<img>{prompt}"}], tokenize=False, add_generation_prompt=True)
+        else:
+            prompt = f"USER: <img>{prompt}\nASSISTANT:"
         input_ids = self.prepare_input_ids(prompt, slot_tokens)
 
         with torch.no_grad():
@@ -181,7 +191,7 @@ if __name__ == "__main__":
     parser.add_argument("--prompt", type=str, default=None)
     parser.add_argument("--save_path", type=str, default="generated_images/")
     parser.add_argument("--generation", action="store_true", help="Whether to generate an image")
-    parser.add_argument("--is_14b", type=bool, default=False, help="Whether the model is 14B version")
+    parser.add_argument("--is_14b", action="store_true", help="Whether the model is 14B version")
     args = parser.parse_args()
 
     os.makedirs(args.save_path, exist_ok=True)
@@ -216,8 +226,8 @@ if __name__ == "__main__":
     transform = hydra.utils.instantiate(transform_cfg)
 
     # Set special tokens
-    text_vocab_size = text_tokenizer.vocab_size
     image_vocab_size = 8192
+    text_vocab_size = text_tokenizer.vocab_size if not args.is_14b else model.config.vocab_size - 2 - image_vocab_size
 
     boi_token_id = text_vocab_size + image_vocab_size
     eoi_token_id = text_vocab_size + image_vocab_size + 1
@@ -229,7 +239,7 @@ if __name__ == "__main__":
     }
     print(f"Base LLM vocab size : {text_vocab_size}, Slot-MLLM vocab size: {model.config.vocab_size}")
     print(f"boi token id: {boi_token_id} | eoi token id: {eoi_token_id}")
-    model = SlotMLLMInferenceWrapper(model, visual_tokenizer, text_tokenizer, transform, special_tokens).to(device)
+    model = SlotMLLMInferenceWrapper(model, visual_tokenizer, text_tokenizer, transform, special_tokens, args.is_14b).to(device)
 
     if args.generation:
         if args.prompt is None:
