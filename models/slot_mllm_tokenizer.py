@@ -1,6 +1,9 @@
 import torch.nn as nn
 import torch
+# import math
+# from torchvision import transforms
 import os
+# from timm.models import create_model
 from typing import Any, Dict, List, Optional, Union
 from transformers import (
     LlamaTokenizer,
@@ -38,10 +41,11 @@ class ImageTokenizer(nn.Module):
                  unclip=True,
                  **kwargs):
         super().__init__()
-        from .slot_qformer.qformer_quantizer import Blip2QformerQuantizer
+        from .slottok.qformer_quantizer import Blip2QformerQuantizer
         if not from_pretrained:
             print(f"$$ Warning: Loading model from scratch")
             model = Blip2QformerQuantizer(vit_precision=vit_precision, is_train=True, **kwargs)
+            model.load_from_pretrained("")
         else:
             print(f"Loading model from {model_path}")
             # First, load the model from BLIP-2 Weights
@@ -84,7 +88,10 @@ class ImageTokenizer(nn.Module):
             diffusion_model = None
             self.diffusion_model = None
 
-        model = model.to(device)
+        try:
+            model = model.to(device)
+        except Exception as e:
+            pass
         if diffusion_model is not None:
             diffusion_model = diffusion_model.to(device)
 
@@ -152,4 +159,105 @@ class ImageTokenizer(nn.Module):
             num_inference_steps=num_inference_steps,
             latents=self.latents,
         ).images
+        return image
+
+class SeedLlamaTokenizer(LlamaTokenizer):
+    def __init__(self,
+                 vocab_file,
+                 unk_token="<unk>",
+                 bos_token="<s>",
+                 eos_token="</s>",
+                 pad_token=None,
+                 sp_model_kwargs: Optional[Dict[str, Any]] = None,
+                 add_bos_token=True,
+                 add_eos_token=False,
+                 clean_up_tokenization_spaces=False,
+                 device='cuda',
+                 fp16=True,
+                 load_diffusion=False,
+                 encoder_url=None,
+                 diffusion_path=None,
+                 **kwargs):
+        super().__init__(vocab_file, unk_token, bos_token, eos_token, pad_token, sp_model_kwargs, add_bos_token, add_eos_token,
+                         clean_up_tokenization_spaces, **kwargs)
+        self.device = device
+        self.fp16 = fp16
+        self.pad_token = self.unk_token
+        self.load_diffusion = load_diffusion
+        self.encoder_url = encoder_url
+        self.diffusion_path = diffusion_path
+        
+        self.load_image_tokenizer()
+
+    def load_image_tokenizer(self):
+        if not hasattr(self, '_image_tokenizer'):
+            if self.encoder_url is not None:
+                model_path = self.encoder_url
+            else:
+                assert hasattr(self, 'name_or_path') and os.path.exists(self.name_or_path)
+                model_path = os.path.join(self.name_or_path, WEIGHTS_NAME)
+            # diffusion_model_path = os.path.join(self.name_or_path, DIFFUSION_NAME)
+            # diffusion_model_path = 'stabilityai/stable-diffusion-2-1-unclip'
+            self._image_tokenizer = ImageTokenizer(model_path=model_path,
+                                                   diffusion_model_path=self.diffusion_path,
+                                                   load_diffusion=self.load_diffusion,
+                                                   device=self.device,
+                                                   fp16=self.fp16)
+
+    @property
+    def image_tokenizer(self):
+        if not hasattr(self, '_image_tokenizer'):
+            if self.encoder_url is not None:
+                model_path = self.encoder_url
+            else:
+                assert hasattr(self, 'name_or_path') and os.path.exists(self.name_or_path)
+                model_path = os.path.join(self.name_or_path, WEIGHTS_NAME)
+            # diffusion_model_path = os.path.join(self.name_or_path, DIFFUSION_NAME)
+            # diffusion_model_path = 'stabilityai/stable-diffusion-2-1-unclip'
+            self._image_tokenizer = ImageTokenizer(model_path=model_path,
+                                                   diffusion_model_path=self.diffusion_path,
+                                                   load_diffusion=self.load_diffusion,
+                                                   device=self.device,
+                                                   fp16=self.fp16)
+        return self._image_tokenizer
+
+    @property
+    def num_image_tokens(self):
+        return 8192  # self.image_tokenizer.num_tokens # allow not load
+
+    def to(self, device):
+        self.device = device
+        if hasattr(self, '_image_tokenizer'):
+            self._image_tokenizer.to(device=device)
+            if self._image_tokenizer.diffusion_model is not None:
+                self._image_tokenizer.diffusion_model.to(device)
+
+    def encode_image(
+        self,
+        image_path=None,
+        image_pil=None,
+        image_torch=None,
+        image_size: int = 224,
+    ):
+        assert (image_path is None) + (image_pil is None) + (image_torch is None) == 2
+
+        # need_norm_to_1 = False
+        if image_path is not None:
+            image_pil = Image.open(image_path).convert('RGB')
+
+        if image_pil is not None:
+            image_torch = self.image_tokenizer.processor(image_pil)
+
+            image_torch = image_torch.to(self.device)
+        return self.image_tokenizer.encode(image_torch)
+
+    def decode_image(self, indices, negative_indices=None, guidance_scale=10):
+        indices = indices.to(self.device)
+        if negative_indices is not None:
+            negative_indices = negative_indices.to(self.device)
+        image = self.image_tokenizer.decode(
+            indices,
+            negative_indices=negative_indices,
+            guidance_scale=guidance_scale,
+        )
         return image

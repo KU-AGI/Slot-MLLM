@@ -2,8 +2,6 @@
 
 This repository contains the official implementation of the paper **Slot-MLLM: Object-Centric Visual Tokenization for Multimodal LLM**.
 
-📄 **Paper:** [arXiv:2505.17726](https://arxiv.org/abs/2505.17726)
-
 ## Environment Setup
 
 We provide a Conda configuration file to easily set up the environment:
@@ -15,12 +13,13 @@ conda activate slot_mllm
 
 ## Huggingface Model Weights
 
-* **Slot Q-Former Weights:** [KU-AGI/Slot_Q-Former](https://huggingface.co/KU-AGI/Slot_Q-Former)
-* **Slot-MLLM Weights:** [KU-AGI/Slot-MLLM-7B-instruct](https://huggingface.co/KU-AGI/Slot-MLLM-7B-instruct) | [KU-AGI/Slot-MLLM-14B-instruct](https://huggingface.co/KU-AGI/Slot-MLLM-14B-instruct)
+* **unCLIP-SD Weights:** [unCLIP-SD](https://drive.google.com/drive/folders/1e27KOZZp0ZguivHZebo7GiKI61cWzRup?usp=drive_link)
+* **SlotTok Weights:** [SlotTok](https://drive.google.com/drive/folders/1KuOdo41X41WwouAvMm1nm9OZVSNvJrYS?usp=drive_link)
+* **Slot-MLLM Weights:** [Slot-MLLM-7B-instruct](https://drive.google.com/drive/folders/1l7UfGglplGSl5Ep8vZNK8xzkQk4SXLqh?usp=drive_link) | [Slot-MLLM-14B-instruct]()
 
 ## Inference
 
-### Slot Q-Former
+### SlotTok
 
 Run the following command:
 
