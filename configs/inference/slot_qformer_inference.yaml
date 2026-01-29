@@ -1,51 +1,142 @@
-cfg_path: ???
-transform_cfg_path: configs/transform/slot_transform.yaml
-result_file_path: ./logs/slot_diffusion
-checkpoint_path:
-  model_path:
-
-test: False
-resume: False
-load_weight: True
-weight_path: pretrained/slot_qformer.pth
-eval: False
-
-dist:
-  n_gpus: 1
-  n_nodes: 1
-
-stage1:
-  dino_model_name: 'dinov2_vitl14' # ['dinov2_vits14', 'dinov2_vitb14', 'dinov2_vitl14', 'dinov2_vitg14']
-  unfreeze_unet: True
-  unfreeze_resnet: False
-  image_size: 256 # [256, 512]
-  loss_weight:
-    loss_itc: 0.5   # Default 0.5
-    loss_lm: 0.5    # Default 0.5
-    loss_diffusion: 1   # Default 1
-    loss_mse: 0.5  # Default 0.5
-  use_causal: True # Default True
-  use_slot: True # Default True
-  slot_config:
-    T: 1
-    num_iterations: 3
-    use_half_slot: False # Default False
-
-stage2:
-  loss_weight:
-    loss_codebook: 1
-    loss_recon: 1
-    loss_diffusion: 0.1
-    loss_mse: 0.1
-  unfreeze_unet: False
-  unfreeze_linear: False
-  blocks_layers: 4  # Default 4
-  blocks_image_layers: 4 # Default 4
-  use_blocks_image: True
-  unclip: False
-  vq:
-    vq_type: 'residual_vq'
-    num_quantizers: 4 # Default 4
-    codebook_embed_dim: 32  # Default 32
-    n_embed: 8192   # Default 8192
-  bypass_codebook: False
+{
+    "cfg_path": "configs/training/stage1/stage1_decoder/slot_qformer_stage1_decoder_slot_adapter_rvq.yaml",
+    "tokenizer_cfg_path": "configs/tokenizer/seed_llama_tokenizer_hf.yaml",
+    "transform_cfg_path": "configs/transform/slot_transform.yaml",
+    "model_cfg_path": "configs/llm/seed_llama_8b.yaml",
+    "result_file_path": "./logs/slot_diffusion",
+    "checkpoint_path": {
+        "model_path": "pretrained/blip2_pretrained.pth",
+        "diffusion_model_path": "stabilityai/stable-diffusion-2-1-unclip"
+    },
+    "test": false,
+    "resume": false,
+    "load_weight": true,
+    "weight_path": "logs/slot_stage1_related/1202_slot_qformer_stage1_unclip_itc05_iter1morph_align0_v2_test_train_unfreeze_align01/checkpoints/last.ckpt",
+    "eval": false,
+    "dist": {
+        "n_gpus": 8,
+        "n_nodes": 1
+    },
+    "dataset": {
+        "train_config": {
+            "dataset_configs": [
+                "configs/data/cc15m-total.yaml",
+                "configs/data/laion-coco.yaml",
+                "configs/data/mscoco.yaml",
+                "configs/data/unsplash.yaml"
+            ],
+            "weights": [
+                15,
+                24,
+                1,
+                4
+            ],
+            "shardshuffle": 100,
+            "resampled": true,
+            "world_size": 1,
+            "one_epoch_data_size": 1000000
+        },
+        "val_config": {
+            "karpathy_file_path": "coco/annotations/karpathy/dataset_coco_test.json",
+            "root_dir": "coco/images/val2014",
+            "start_index": 0,
+            "end_index": 256,
+            "use_coco_val": true
+        },
+        "num_workers": 16,
+        "shuffle": true,
+        "text_max_length": 32
+    },
+    "stage1": {
+        "init": "SEED",
+        "dino_model_name": "dinov2_vitl14",
+        "unfreeze_unet": true,
+        "unfreeze_unet_crossattn": false,
+        "unfreeze_resnet": false,
+        "image_size": 256,
+        "loss_weight": {
+            "loss_itc": 0.5,
+            "loss_lm": 0.5,
+            "loss_diffusion": 1,
+            "loss_mse": 0.5,
+            "loss_slot_align": 0.1
+        },
+        "use_causal": true,
+        "use_blip_itc": false,
+        "freeze_qformer_self_attn": false,
+        "layer_norm": true,
+        "visual_embedding_encoder_as_mlp": true,
+        "use_proj": true,
+        "use_slot": true,
+        "slot_config": {
+            "T": 1,
+            "num_iterations": 1,
+            "use_half_slot": false,
+            "type": "morph"
+        },
+        "val_reverse": true,
+        "permute_aug": null,
+        "permute_aug_type": null,
+        "use_pos_unet": null,
+        "use_unet_slotadapt": true
+    },
+    "stage2": {
+        "bypass_codebook": false,
+        "load_diffusion": true,
+        "vq": {
+            "type": "vq2",
+            "replace_codes": true,
+            "replacement_num_batches": 1000,
+            "discarding_threshold": 0.01,
+            "legacy": false,
+            "vq_type": "residual_vq",
+            "num_quantizers": 4,
+            "codebook_embed_dim": 32,
+            "n_embed": 8192
+        },
+        "loss_weight": {
+            "loss_codebook": 1,
+            "loss_recon": 1,
+            "loss_generation_embedding": 0.5,
+            "loss_diffusion": 0.1,
+            "loss_mse": 0.1,
+            "loss_slot_align": 0.1
+        },
+        "recon_s": true,
+        "unfreeze_unet": false,
+        "unfreeze_linear": false,
+        "blocks_layers": 4,
+        "blocks_image_layers": 4,
+        "use_blocks_image": true,
+        "unclip": false
+    },
+    "experiment": {
+        "seed": 42,
+        "stage": 2,
+        "local_batch_size": 128,
+        "val_batch_size": 8,
+        "test_split": "train",
+        "max_epochs": 50,
+        "deterministic": false,
+        "grad_accumulation": 1,
+        "check_val_every_n_epoch": 1,
+        "enable_checkpointing": true,
+        "log_every_n_steps": 1,
+        "num_sanity_val_steps": 1,
+        "num_warmup_steps": 500,
+        "grad_clip_val": 2,
+        "find_unused_parameters": true,
+        "total_training_steps": 48828.125
+    },
+    "optimizer": {
+        "vit_precision": "fp32",
+        "diffusion_precision": "fp16",
+        "precision": "bf16",
+        "max_lr": 0.0001
+    },
+    "hyperparameters": {
+        "beta_1": 0.9,
+        "beta_2": 0.999,
+        "weight_decay": 0.01
+    }
+}
