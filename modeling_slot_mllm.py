@@ -129,17 +129,17 @@ class SlotMLLMModel(PreTrainedModel):
 
     def __init__(self, config):
         super().__init__(config)
-        # config를 OmegaConf로 변환
+        # Convert config to OmegaConf
         cfg_dict = config.to_dict()
         cfg = OmegaConf.create(cfg_dict)
         
-        # 모델 초기화
-        self.model = None  # AutoModelForCausalLM에서 로드
-        self.visual_tokenizer = None  # SlotInferenceWrapper에서 로드
-        self.text_tokenizer = None  # AutoTokenizer에서 로드
-        self.transform = None  # transform_cfg에서 로드
+        # Initialize model components
+        self.model = None  # Loaded from AutoModelForCausalLM
+        self.visual_tokenizer = None  # Loaded from SlotInferenceWrapper
+        self.text_tokenizer = None  # Loaded from AutoTokenizer
+        self.transform = None  # Loaded from transform_cfg
         
-        # 특수 토큰 설정
+        # Special token settings
         self.boi_token = None
         self.eoi_token = None
         self.text_vocab_size = None
@@ -147,7 +147,7 @@ class SlotMLLMModel(PreTrainedModel):
         self.image_token_length = 128
         self.last_image_token = None
         
-        # 생성 설정
+        # Generation configuration
         self.generation_config = {
             "num_beams": 5,
             "max_new_tokens": 512
@@ -155,16 +155,16 @@ class SlotMLLMModel(PreTrainedModel):
 
     def forward(self, input_ids=None, attention_mask=None, pixel_values=None, return_dict=True):
         if pixel_values is not None:
-            # 이미지 인코딩
+            # Image encoding
             with torch.autocast("cuda", dtype=torch.float16):
                 slot_tokens = self.visual_tokenizer.forward_stage_1(pixel_values)
                 slot_tokens = slot_tokens + self.text_vocab_size
                 slot_tokens = rearrange(slot_tokens, "b n d -> b (n d)", d=self.visual_tokenizer.num_quantizers)
                 
-                # 입력 준비
+                # Prepare inputs
                 input_ids = self.prepare_input_ids(input_ids, slot_tokens)
         
-        # 모델 forward
+        # Forward through the language model
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -198,16 +198,16 @@ class SlotMLLMModel(PreTrainedModel):
 
     def generate(self, input_ids=None, attention_mask=None, pixel_values=None, **kwargs):
         if pixel_values is not None:
-            # 이미지 인코딩
+            # Image encoding
             with torch.autocast("cuda", dtype=torch.float16):
                 slot_tokens = self.visual_tokenizer.forward_stage_1(pixel_values)
                 slot_tokens = slot_tokens + self.text_vocab_size
                 slot_tokens = rearrange(slot_tokens, "b n d -> b (n d)", d=self.visual_tokenizer.num_quantizers)
                 
-                # 입력 준비
+                # Prepare inputs
                 input_ids = self.prepare_input_ids(input_ids, slot_tokens)
         
-        # 생성
+        # Generation
         return self.model.generate(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -218,21 +218,21 @@ class SlotMLLMModel(PreTrainedModel):
         os.makedirs(save_directory, exist_ok=True)
         # (1) config
         self.config.save_pretrained(save_directory)
-        # (2) weights: 공유 버퍼 처리 가능한 save_model 사용
+        # (2) weights: use save_model which can handle shared buffers
         save_model(self, os.path.join(save_directory, "model.safetensors"))
 
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, is_14b=False, **kwargs):
-        # 설정 로드
+        # Load configuration
         config = cls.config_class.from_pretrained(pretrained_model_name_or_path)
         
-        # 모델 초기화
+        # Initialize model
         model = cls(config)
         
-        # 디바이스 설정
+        # Set device
         device = "cuda" if torch.cuda.is_available() else "cpu"
         
-        # 시각적 토크나이저 로드
+        # Load visual tokenizer
         visual_tokenizer_cfg_path = "configs/inference/slot_qformer_inference.yaml"
         visual_tokenizer_cfg, _ = build_config(path=visual_tokenizer_cfg_path)
 
@@ -241,7 +241,7 @@ class SlotMLLMModel(PreTrainedModel):
         visual_tokenizer.freeze()
         visual_tokenizer.eval()
         
-        # 텍스트 토크나이저 로드
+        # Load text tokenizer
         if is_14b:
             text_tokenizer = AutoTokenizer.from_pretrained(
                 "Qwen/Qwen2.5-14B-Instruct"
@@ -251,18 +251,18 @@ class SlotMLLMModel(PreTrainedModel):
                 "lmsys/vicuna-7b-v1.5",
             )
         
-        # LLM 모델 로드 (safetensors 사용)
+        # Load LLM model (using safetensors)
         llm_model = AutoModelForCausalLM.from_pretrained(
             pretrained_model_name_or_path,
             torch_dtype=torch.bfloat16,
             use_safetensors=True
         ).to(device)
         
-        # 변환 설정 로드
+        # Load transform configuration
         transform_cfg = OmegaConf.load(visual_tokenizer_cfg.transform_cfg_path)
         transform = hydra.utils.instantiate(transform_cfg)
         
-        # 특수 토큰 설정
+        # Set special tokens
         text_vocab_size = text_tokenizer.vocab_size
         image_vocab_size = 8192
         
@@ -275,12 +275,12 @@ class SlotMLLMModel(PreTrainedModel):
             "image_vocab_size": image_vocab_size,
         }
 
-        # 특수 토큰 추가
+        # Add special tokens
         text_tokenizer.added_special_tokens = special_tokens
         text_tokenizer.boi_token = boi_token_id
         text_tokenizer.eoi_token = eoi_token_id
         
-        # 모델 컴포넌트 설정
+        # Set model components
         model.model = llm_model
         model.visual_tokenizer = visual_tokenizer
         model.text_tokenizer = text_tokenizer
@@ -306,41 +306,41 @@ def push_to_hub(
     is_14b: bool = False,
 ):
     """
-    모델을 Hugging Face Hub에 업로드하는 함수
+    Upload a model to the Hugging Face Hub.
     
     Args:
-        model_path (str): 모델이 저장된 경로
-        repo_id (str): Hugging Face 저장소 ID (username/model-name 형식)
-        token (str): Hugging Face API 토큰
-        commit_message (str): 커밋 메시지
+        model_path (str): Path to the saved model directory.
+        repo_id (str): Hugging Face repo ID (in the form username/model-name).
+        token (str): Hugging Face API token.
+        commit_message (str): Commit message.
     """
     from huggingface_hub import HfApi, create_repo, Repository
     import shutil
     import tempfile
     
-    # 1. 모델 로드
+    # 1. Load model
     model = SlotMLLMModel.from_pretrained(model_path, is_14b=is_14b)
     
-    # 2. 저장소 생성
+    # 2. Create repository
     api = HfApi()
     try:
         create_repo(repo_id, token=token, repo_type="model")
     except Exception as e:
         print(f"Repository might already exist: {e}")
     
-    # 3. 임시 디렉토리에 저장소 클론
+    # 3. Clone repository into a temporary directory
     with tempfile.TemporaryDirectory() as tmp_dir:
-        # 저장소 클론
+        # Clone repository
         repo = Repository(
             local_dir=tmp_dir,
             clone_from=f"https://huggingface.co/{repo_id}",
             use_auth_token=token
         )
         
-        # LFS 설정
+        # Configure LFS
         repo.lfs_track("*.safetensors")
         
-        # 모델 파일 복사
+        # Copy model files
         model.model.save_pretrained(
             tmp_dir,
             safe_serialization=True,
@@ -349,7 +349,7 @@ def push_to_hub(
         # model.model.config.save_pretrained(tmp_dir)
         model.text_tokenizer.save_pretrained(tmp_dir)
 
-        # 변경사항 커밋 및 푸시
+        # Commit and push changes
         repo.git_add()
         repo.git_commit(commit_message)
         repo.git_push()

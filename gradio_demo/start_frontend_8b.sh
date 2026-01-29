@@ -1,1 +1,0 @@
-python3 slot_mllm_gradio.py --server_port 6060 --request_address http://127.0.0.1:7890/generate --model_type slot-mllm-8b

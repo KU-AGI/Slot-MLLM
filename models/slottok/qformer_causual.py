@@ -1570,11 +1570,11 @@ class BertLMHeadModel(BertPreTrainedModel):
         self.bert = BertModel(config, add_pooling_layer=False)
         self.cls = BertOnlyMLMHead(config)
         ### ---- Added ---- ###
-        # image cls
+        # Image classification head
         self.image_cls = nn.Linear(config.hidden_size, config.hidden_size)
-        # pred LayerNorm
+        # Prediction LayerNorm
         self.pred_ln = nn.LayerNorm(config.hidden_size, eps=1e-6)
-        # pred gain (스케일 파라미터) - fixed
+        # Prediction gain (scale parameter) - fixed
         self.pred_gain = 1
 
         if True:
@@ -1753,14 +1753,14 @@ class BertLMHeadModel(BertPreTrainedModel):
         query_embeds=None,
         encoder_hidden_states=None,
         encoder_attention_mask=None,
-        # 이미지 토큰에 대한 continuous LM Loss를 구하기 위해 별도 labels(벡터)가 필요할 수도 있지만,
-        # 여기서는 "shifted next token"을 그대로 정답으로 쓴다고 가정
+        # To compute continuous LM loss for image tokens, we could use separate labels (vectors),
+        # but here we simply assume "shifted next token" as the target.
         past_key_values=None,
         use_cache=True,
         output_attentions=None,
         output_hidden_states=None,
         return_dict=None,
-        # regression 로스 타입
+        # Regression loss type
         regression_loss_type="mse",  # "mse" or "smoothl1" etc.
         reduction="mean",
         is_decoder=False,

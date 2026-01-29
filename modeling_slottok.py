@@ -517,9 +517,9 @@ class SlotInferenceWrapper(LightningModule):
         # Normalize image
         image = self.normalize_vit(image)
 
-        # DINO backbone은 FP32 연산을 기본으로 하므로,
-        # 외부에서 autocast(FP16)가 걸려 있어도 여기서는 FP32로 강제한다.
-        # (Input과 bias dtype mismatch 방지)
+        # DINO backbone uses FP32 computation by default,
+        # so we force FP32 here even if external autocast(FP16) is enabled
+        # to avoid dtype mismatch between input and bias.
         with torch.no_grad():
             with autocast(enabled=False):
                 image = image.to(dtype=torch.float32)
