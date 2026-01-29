@@ -1,7 +1,5 @@
 import os
 import torch
-import torch.nn as nn
-import torch.distributed as dist
 
 from PIL import Image
 
@@ -9,7 +7,7 @@ import hydra
 from omegaconf import OmegaConf
 import argparse
 
-from modeling_slottok import SlotTrainingWrapper
+from modeling_slottok import SlotInferenceWrapper
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -26,7 +24,7 @@ if __name__ == "__main__":
 
     os.makedirs(cfg.result_file_path, exist_ok=True)
 
-    model = SlotTrainingWrapper.load_from_checkpoint(
+    model = SlotInferenceWrapper.load_from_checkpoint(
         args.model_path,
         cfg=cfg,
         unCLIP_path=args.unCLIP_path,

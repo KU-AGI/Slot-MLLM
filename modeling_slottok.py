@@ -42,8 +42,8 @@ class DINOBackbone(nn.Module):
             h=int(np.sqrt(enc_out["x_norm_patchtokens"].shape[-2]))
         )
 
-class SlotTrainingWrapper(LightningModule):
-    """Training wrapper for Slot
+class SlotInferenceWrapper(LightningModule):
+    """Inference wrapper for Slot
 
     Args:
         LightningModule (cfg, model): model should be ImageTokenizer

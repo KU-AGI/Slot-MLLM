@@ -15,7 +15,7 @@ conda activate slot_mllm
 
 * **unCLIP-SD Weights:** [unCLIP-SD](https://drive.google.com/drive/folders/1e27KOZZp0ZguivHZebo7GiKI61cWzRup?usp=drive_link)
 * **SlotTok Weights:** [SlotTok](https://drive.google.com/drive/folders/1KuOdo41X41WwouAvMm1nm9OZVSNvJrYS?usp=drive_link)
-* **Slot-MLLM Weights:** [Slot-MLLM-7B-instruct](https://drive.google.com/drive/folders/1l7UfGglplGSl5Ep8vZNK8xzkQk4SXLqh?usp=drive_link) | [Slot-MLLM-14B-instruct]()
+* **Slot-MLLM Weights:** [Slot-MLLM-7B-instruct](https://drive.google.com/drive/folders/1l7UfGglplGSl5Ep8vZNK8xzkQk4SXLqh?usp=drive_link) | [Slot-MLLM-14B-instruct](https://drive.google.com/drive/folders/1ENJBynNmi-C8nCytpFE-RWiHJDyzvqPY?usp=sharing)
 
 ## Inference
 
