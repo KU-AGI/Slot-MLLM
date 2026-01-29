@@ -24,7 +24,7 @@ conda activate slot_mllm
 Run the following command:
 
 ```bash
-python inference_tokenizer.py
+python inference_tokenizer.py --cfg_path=/path/to/config.yaml --model_path=/path/to/slottok.ckpt --unCLIP_path=/path/to/unCLIP-SD
 ```
 
 ### Slot-MLLM

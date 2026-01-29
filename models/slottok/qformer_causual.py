@@ -1768,22 +1768,8 @@ class BertLMHeadModel(BertPreTrainedModel):
         slot_config=None,
         return_bert=False,
     ):
-        """
-        이미지를 '연속형 토큰 시퀀스'로 보고, Shifted LM(Next-Token) Loss(MSE 등)을 구하는 함수 예시.
-
-        가정:
-          - input_ids 는 필요에 따라 None 일 수도 있음
-          - query_embeds 가 [batch, num_img_tokens, hidden_dim] 형태로 들어온다고 가정
-          - forward 결과 sequence_output 도 [batch, seq_len, hidden_dim]
-            (만약 query_embeds 이후에 text token이 존재한다면 seq_len = num_img_tokens + text_len 일 수도 있으므로,
-             "이미지 토큰만" 따로 떼어내 MSE를 구해야 함)
-        """
-
         return_dict = (return_dict if return_dict is not None else self.config.use_return_dict)
 
-        # -- 1) BertModel forward 호출 --
-        #    텍스트 LM이 아니므로, self.cls 등을 거치지 않고,
-        #    아래에서 직접 hidden_states 로스 계산.
         outputs = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -1802,16 +1788,13 @@ class BertLMHeadModel(BertPreTrainedModel):
             slot_config=slot_config,
         )
 
-        # -- 2) 시퀀스 출력 가져오기 --
         sequence_output = outputs[0]  # [batch, total_seq_len, hidden_dim]
         image_hidden = sequence_output
 
-        # -- 3) Shifted Next-Token MSE --
         pred_tokens = image_hidden[:, :-1, :]   # t=0..(n-2)
         pred_tokens = self.image_cls(pred_tokens)
-        # -----추가 LayerNorm, gain-----
-        pred_tokens = self.pred_ln(pred_tokens)  # 정규화
-        pred_tokens = self.pred_gain * pred_tokens  # 스케일링
+        pred_tokens = self.pred_ln(pred_tokens)
+        pred_tokens = self.pred_gain * pred_tokens
 
         label_tokens = self.pred_gain * image_hidden[:, 1:, :]   # t=1..(n-1)
 
@@ -1826,14 +1809,11 @@ class BertLMHeadModel(BertPreTrainedModel):
 
         # -- 4) return --
         if not return_dict:
-            # logits 부분에는 보통 classification 점수가 들어가지만,
-            # 여기서는 별도 discrete vocab 예측이 아니므로 pred_tokens 등을 넣거나 None
             return (loss_reg, sequence_output, outputs.past_key_values) + outputs[2:]
 
-        # transformers 스타일로 리턴 (logits에는 임시로 pred_tokens)
         return CausalLMOutputWithCrossAttentions(
             loss=loss_reg,
-            logits=pred_tokens,  # 굳이 logits이 필요 없다면 None도 가능
+            logits=pred_tokens,
             past_key_values=outputs.past_key_values,
             hidden_states=outputs.hidden_states,
             attentions=outputs.attentions,

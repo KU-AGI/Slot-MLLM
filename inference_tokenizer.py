@@ -7,15 +7,18 @@ from PIL import Image
 
 import hydra
 from omegaconf import OmegaConf
+import argparse
 
 from modeling_slottok import SlotTrainingWrapper
 
 if __name__ == "__main__":
-    cfg_path = "/path/to/config.yaml"
-    cfg = OmegaConf.load(cfg_path)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--cfg_path", type=str, default="/path/to/config.yaml")
+    parser.add_argument("--model_path", type=str, default="/path/to/slottok.ckpt")
+    parser.add_argument("--unCLIP_path", type=str, default="/path/to/unCLIP-SD")
+    args = parser.parse_args()
 
-    model_path = "/path/to/slottok.ckpt"
-    unCLIP_path = "/path/to/unCLIP-SD"
+    cfg = OmegaConf.load(args.cfg_path)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     transform_cfg = OmegaConf.load(cfg.transform_cfg_path)
@@ -23,7 +26,12 @@ if __name__ == "__main__":
 
     os.makedirs(cfg.result_file_path, exist_ok=True)
 
-    model = SlotTrainingWrapper.load_from_checkpoint(model_path, cfg=cfg, strict=False)
+    model = SlotTrainingWrapper.load_from_checkpoint(
+        args.model_path,
+        cfg=cfg,
+        unCLIP_path=args.unCLIP_path,
+        strict=False
+    )
     model = model.to(device)
     model.eval()
 
