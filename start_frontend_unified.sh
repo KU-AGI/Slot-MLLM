@@ -1,1 +1,0 @@
-python3 gradio_demo_frontend.py --server_port 6060
